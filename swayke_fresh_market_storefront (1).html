@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swayke Fresh Market — Farm-to-Table Produce | Mauritius</title>
+    
+    <!-- Google Fonts: Inter & Fraunces -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- QRCode.js Library for Instant Store QR Poster Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Fraunces', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f3f8f4',
+                            100: '#e2efe5',
+                            200: '#c5dfcc',
+                            500: '#3d8b56',
+                            600: '#2e6f42',
+                            700: '#255836',
+                            800: '#1f472d',
+                            900: '#1a3b26',
+                        },
+                        earth: {
+                            50: '#fbf9f5',
+                            100: '#f5f0e6',
+                            200: '#e8decb',
+                            800: '#4a3f35',
+                            900: '#2d2620',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar hiding for category pills */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Smooth tap feedback */
+        .tap-scale:active {
+            transform: scale(0.97);
+        }
+        /* Print Styles for Storefront QR Poster */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #qrPosterPrintable, #qrPosterPrintable * {
+                visibility: visible;
+            }
+            #qrPosterPrintable {
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                width: 100%;
+                max-width: 480px;
+                box-shadow: none !important;
+                border: 3px solid #1f472d !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-earth-50 text-earth-900 font-sans antialiased selection:bg-brand-200 selection:text-brand-900 pb-28 sm:pb-16">
+
+    <!-- Top Sticky Header -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-earth-200 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 sm:py-4">
+            <div class="flex items-center justify-between gap-3">
+                <!-- Brand Identity (Tap logo 5 times to unlock Owner Mode) -->
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="handleSecretLogoTap()" title="Swayke Fresh Market" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-brand-700 text-white flex items-center justify-center shadow-sm shrink-0 cursor-pointer select-none active:scale-95 transition">
+                        <span class="text-xl sm:text-2xl">🥬</span>
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-serif font-bold text-lg sm:text-xl text-brand-900 leading-tight">Swayke Fresh Market</h1>
+                            <span id="ownerModeBadge" class="hidden text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">Owner Edit</span>
+                        </div>
+                        <p class="text-xs text-stone-500 flex items-center gap-1.5 mt-0.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span id="harvestDateBadge">Harvested Fresh • Mauritius</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right Header Actions -->
+                <div class="flex items-center gap-2">
+                    <!-- Live Sheet Sync Status Pill (Visible only when connected) -->
+                    <button id="liveSyncBadge" onclick="syncFromGoogleSheet(true)" title="Synced with Google Sheets — Click to refresh prices" class="hidden items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition tap-scale">
+                        <i id="liveSyncIcon" class="fa-solid fa-rotate text-emerald-600"></i>
+                        <span class="hidden md:inline">Live Prices</span>
+                    </button>
+
+                    <!-- Desktop/Tablet Quick Cart Trigger -->
+                    <button onclick="openCartDrawer()" class="hidden sm:flex items-center gap-2.5 bg-brand-800 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition tap-scale">
+                        <i class="fa-solid fa-basket-shopping"></i>
+                        <span>Basket</span>
+                        <span id="headerCartCount" class="bg-white text-brand-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="mt-3 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-sm"></i>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    oninput="handleSearch(this.value)"
+                    placeholder="Search tomatoes, greens, ginger, herbs..." 
+                    class="w-full pl-10 pr-9 py-2.5 bg-earth-100/80 border border-earth-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition"
+                >
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div class="max-w-5xl mx-auto px-4 pb-3 overflow-x-auto no-scrollbar">
+            <div id="categoryContainer" class="flex items-center gap-2">
+                <!-- Populated dynamically by JS -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Owner Mode Banner (Hidden by default; PIN-protected) -->
+    <div id="ownerControlPanel" class="hidden bg-amber-50 border-b border-amber-200">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-amber-900 text-xs sm:text-sm">
+                <i class="fa-solid fa-pen-to-square text-amber-600"></i>
+                <span><strong>Owner Mode:</strong> Update prices, units, stock, connect Google Sheets, or generate your Store QR Code.</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openQrModal()" class="bg-brand-700 hover:bg-brand-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-qrcode"></i> Store QR Code
+                </button>
+                <button onclick="openSheetSyncModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-table"></i> Live Google Sheet
+                </button>
+                <button onclick="openAddProductModal()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> Add Item
+                </button>
+                <button onclick="downloadStandaloneHTML()" title="Download your storefront as index.html to host online" class="bg-stone-800 hover:bg-stone-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Download index.html
+                </button>
+                <button onclick="toggleOwnerMode()" class="bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                    Done Editing
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Storefront Content -->
+    <main class="max-w-5xl mx-auto px-4 pt-5">
+        <!-- Store Intro / Farm Note -->
+        <div class="bg-gradient-to-r from-brand-800 to-brand-700 rounded-2xl p-4 sm:p-5 text-white mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <span class="inline-block text-[11px] font-semibold uppercase tracking-wider bg-white/15 px-2.5 py-0.5 rounded-full mb-1.5">Direct From Our Fields • Mauritius</span>
+                <h2 class="font-serif text-lg sm:text-xl font-bold">Freshly picked this morning.</h2>
+                <p class="text-xs sm:text-sm text-brand-100 mt-0.5">Select your vegetables & quantities below, then send your order straight to our WhatsApp (<span class="font-semibold text-white">+230 5811 0852</span>).</p>
+            </div>
+            <div class="flex items-center gap-3 text-xs bg-brand-900/40 px-3.5 py-2.5 rounded-xl border border-white/10 shrink-0">
+                <i class="fa-brands fa-whatsapp text-2xl text-emerald-300"></i>
+                <div>
+                    <div class="font-semibold text-white">Fast WhatsApp Order</div>
+                    <div class="text-brand-200">+230 5811 0852 • Pay on pickup/delivery</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Header -->
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="gridTitle" class="font-serif font-bold text-lg text-earth-900">Today's Harvest</h3>
+            <span id="itemCountLabel" class="text-xs font-medium text-stone-500">0 items</span>
+        </div>
+
+        <!-- Empty Search State -->
+        <div id="emptyState" class="hidden text-center py-12 px-4 bg-white rounded-2xl border border-earth-200">
+            <div class="text-4xl mb-3">🥕</div>
+            <h4 class="font-serif font-bold text-base text-earth-900">No vegetables found</h4>
+            <p class="text-xs text-stone-500 mt-1 max-w-xs mx-auto">Try clearing your search or switching back to "All" categories.</p>
+            <button onclick="resetFilters()" class="mt-4 bg-brand-700 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-brand-800 transition">
+                Show All Produce
+            </button>
+        </div>
+
+        <!-- Produce Grid -->
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Product Cards rendered dynamically by JS -->
+        </div>
+    </main>
+
+    <!-- Store Footer (Strictly Customer View — No Owner Buttons Exposed) -->
+    <footer class="max-w-5xl mx-auto px-4 mt-12 pt-6 border-t border-earth-200 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
+        <div>
+            <p class="font-semibold text-earth-800">Swayke Fresh Market • Mauritius</p>
+            <p class="mt-0.5">WhatsApp Orders: <span class="font-medium text-brand-800">+230 5811 0852</span> • Open Tue, Thu & Sat • 7:00 AM – 2:00 PM</p>
+        </div>
+        <div class="text-stone-400">
+            Farm-to-Table Daily Harvest
+        </div>
+    </footer>
+
+    <!-- Mobile Sticky Bottom Checkout Bar -->
+    <div id="mobileBottomBar" class="fixed bottom-0 inset-x-0 z-30 p-3 bg-white/95 backdrop-blur-md border-t border-earth-200 shadow-lg sm:hidden transition-transform duration-300 translate-y-full">
+        <button onclick="openCartDrawer()" class="w-full bg-brand-700 hover:bg-brand-800 text-white py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-between shadow-md tap-scale">
+            <div class="flex items-center gap-2.5">
+                <span id="mobileCartCount" class="bg-white text-brand-900 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">0</span>
+                <span>View Basket & Order</span>
+            </div>
+            <span id="mobileCartTotal" class="font-bold">Rs 0</span>
+        </button>
+    </div>
+
+    <!-- Slide-Over Basket & Checkout Drawer -->
+    <div id="cartDrawerBackdrop" onclick="closeCartDrawer()" class="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-40 hidden opacity-0 transition-opacity duration-300"></div>
+    <aside id="cartDrawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+        <!-- Drawer Header -->
+        <div class="px-5 py-4 border-b border-earth-200 flex items-center justify-between bg-earth-50">
+            <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-basket-shopping text-brand-700 text-lg"></i>
+                <h2 class="font-serif font-bold text-lg text-earth-900">Your Harvest Basket</h2>
+            </div>
+            <button onclick="closeCartDrawer()" class="w-9 h-9 rounded-full bg-white border border-earth-200 text-stone-600 hover:text-stone-900 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Drawer Scrollable Body -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-5">
+            <!-- Cart Items List -->
+            <div id="cartItemsContainer" class="space-y-3">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Customer Order Details Form (Shown when cart has items) -->
+            <div id="checkoutFormSection" class="hidden space-y-4 pt-4 border-t border-earth-200">
+                <h3 class="font-serif font-bold text-base text-earth-900">Order Details</h3>
+                
+                <!-- Fulfillment Toggle -->
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1.5">How would you like to receive your produce?</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btnPickup" onclick="setFulfillment('pickup')" class="py-2.5 px-3 rounded-xl border-2 border-brand-600 bg-brand-50 text-brand-900 font-semibold text-xs flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-store"></i> Farm Pickup
+                        </button>
+                        <button type="button" id="btnDelivery" onclick="setFulfillment('delivery')" class="py-2.5 px-3 rounded-xl border border-earth-200 bg-white text-stone-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-truck"></i> Local Delivery
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Customer Name -->
+                <div>
+                    <label for="customerName" class="block text-xs font-semibold text-stone-600 mb-1">Your Name *</label>
+                    <input type="text" id="customerName" placeholder="e.g., Jean-Luc" class="w-full px-3.5 py-2.5 rounded-xl border border-earth-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <!-- Pickup Slot OR Delivery Address -->
+                <div id="pickupSlotGroup">
+                    <label for="pickupTime" class="block text-xs font-semibold text-stone-600 mb-1">Preferred Pickup Time</label>
+                    <select id="pickupTime" class="w-full px-3.5 py-2.5 rounded-xl border border-earth-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="Morning (7:00 AM – 10:00 AM)">Morning (7:00 AM – 10:00 AM)</option>
+                        <option value="Midday (10:00 AM – 12:30 PM)">Midday (10:00 AM – 12:30 PM)</option>
+                        <option value="Afternoon (12:30 PM – 2:00 PM)">Afternoon (12:30 PM – 2:00 PM)</option>
+                    </select>
+                </div>
+
+                <div id="deliveryAddressGroup" class="hidden">
+                    <label for="deliveryAddress" class="block text-xs font-semibold text-stone-600 mb-1">Delivery Address *</label>
+                    <input type="text" id="deliveryAddress" placeholder="Street, Village / Town..." class="w-full px-3.5 py-2.5 rounded-xl border border-earth-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <!-- Optional Note -->
+                <div>
+                    <label for="orderNotes" class="block text-xs font-semibold text-stone-600 mb-1">Special Note (Optional)</label>
+                    <input type="text" id="orderNotes" placeholder="e.g., Ripe tomatoes please, leave by gate..." class="w-full px-3.5 py-2.5 rounded-xl border border-earth-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Drawer Footer / WhatsApp Submit -->
+        <div id="cartDrawerFooter" class="hidden p-5 border-t border-earth-200 bg-earth-50 space-y-3">
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-stone-600 font-medium">Estimated Total</span>
+                <span id="drawerTotalAmount" class="font-serif font-bold text-xl text-brand-900">Rs 0</span>
+            </div>
+            <p class="text-[11px] text-stone-500">Final exact weight confirmed at harvest. No online payment required now.</p>
+            
+            <button onclick="submitWhatsAppOrder()" class="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition tap-scale">
+                <i class="fa-brands fa-whatsapp text-xl"></i>
+                <span>Send Order via WhatsApp</span>
+            </button>
+            
+            <button onclick="copyOrderText()" class="w-full py-2 px-3 rounded-xl bg-white border border-earth-200 hover:bg-earth-100 text-stone-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition">
+                <i class="fa-regular fa-copy"></i>
+                <span>Copy Order Text Instead</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Storefront QR Code Generator Modal (Owner Tool) -->
+    <div id="qrModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-earth-200 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-earth-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-serif font-bold text-base text-earth-900">Customer Store QR Code</h3>
+                        <p class="text-[11px] text-stone-500">Scan to open Swayke Fresh Market on any phone</p>
+                    </div>
+                </div>
+                <button onclick="closeQrModal()" class="text-stone-400 hover:text-stone-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Live URL Input -->
+            <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Your Hosted Storefront Link (URL)</label>
+                <div class="flex gap-2">
+                    <input type="url" id="storePublicUrlInput" oninput="updateStoreQrCode(this.value)" placeholder="https://swetagunessk-creator.github.io/swaykefresh/" class="flex-1 px-3 py-2 rounded-xl border border-earth-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <button type="button" onclick="copyStoreLink()" title="Copy link" class="px-3 py-2 rounded-xl bg-earth-100 hover:bg-earth-200 text-earth-900 text-xs font-semibold transition shrink-0">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+                <p id="localFileQrWarning" class="hidden text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-2 leading-relaxed">
+                    <strong>Tip:</strong> You're currently viewing a local preview. Once you upload <code>index.html</code> to GitHub Pages or Cloudflare Pages, paste your live <code>https://...</code> link above so any customer's phone can open it!
+                </p>
+            </div>
+
+            <!-- Printable Farmgate QR Poster Preview -->
+            <div id="qrPosterPrintable" class="bg-earth-50 border-2 border-brand-700 rounded-2xl p-5 text-center space-y-3 shadow-xs">
+                <div class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                    <span>🥬</span> Swayke Fresh Market
+                </div>
+                <h4 class="font-serif font-bold text-lg text-brand-900 leading-snug">Scan to See Today's Harvest & Order on WhatsApp</h4>
+                
+                <!-- Rendered QR Canvas Container -->
+                <div class="bg-white p-3.5 rounded-2xl border border-earth-200 inline-flex items-center justify-center shadow-xs mx-auto">
+                    <div id="qrcodeCanvasContainer" class="flex items-center justify-center"></div>
+                </div>
+
+                <div class="space-y-0.5">
+                    <p class="text-xs font-semibold text-earth-900">WhatsApp Orders: +230 5811 0852</p>
+                    <p id="qrPosterDisplayUrl" class="text-[10px] text-stone-500 break-all px-2">https://swetagunessk-creator.github.io/swaykefresh/</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-2.5 pt-1">
+                <button type="button" onclick="downloadQrPng()" class="py-2.5 px-3 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Download QR Image
+                </button>
+                <button type="button" onclick="window.print()" class="py-2.5 px-3 rounded-xl bg-white border border-earth-300 hover:bg-earth-100 text-earth-900 text-xs font-bold transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Print Farmgate Sign
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sheets Live Sync Modal (Owner Tool) -->
+    <div id="sheetSyncModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl border border-earth-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-earth-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <i class="fa-solid fa-table"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-serif font-bold text-base text-earth-900">Connect Live Google Sheet</h3>
+                        <p class="text-[11px] text-stone-500">Update prices in Google Sheets and auto-sync your storefront</p>
+                    </div>
+                </div>
+                <button onclick="closeSheetSyncModal()" class="text-stone-400 hover:text-stone-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="bg-earth-50 border border-earth-200 rounded-xl p-3.5 text-xs text-stone-700 space-y-2">
+                <p class="font-semibold text-earth-900">Quick 3-Step Setup:</p>
+                <ol class="list-decimal list-inside space-y-1 text-stone-600">
+                    <li>Download your starter CSV below & upload it to <strong>Google Sheets</strong>.</li>
+                    <li>In Google Sheets, click <strong>File → Share → Publish to web</strong>, choose <strong>Comma-separated values (.csv)</strong>, and copy the link.</li>
+                    <li>Paste that CSV link below and click <strong>Connect & Sync</strong>.</li>
+                </ol>
+                <div class="pt-1">
+                    <button type="button" onclick="downloadStarterCsv()" class="inline-flex items-center gap-1.5 bg-white border border-earth-300 hover:bg-earth-100 text-earth-900 font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-2xs">
+                        <i class="fa-solid fa-file-csv text-emerald-600"></i> Download Starter CSV
+                    </button>
+                </div>
+            </div>
+
+            <form onsubmit="saveAndConnectSheet(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Published Google Sheet CSV Link</label>
+                    <input type="url" id="sheetCsvUrlInput" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv" class="w-full px-3 py-2.5 rounded-xl border border-earth-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div id="sheetSyncStatusMsg" class="hidden text-xs p-2.5 rounded-xl"></div>
+
+                <div class="flex items-center justify-between gap-2 pt-2">
+                    <button type="button" id="disconnectSheetBtn" onclick="disconnectGoogleSheet()" class="hidden text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-2">
+                        Disconnect Sheet
+                    </button>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button type="button" onclick="closeSheetSyncModal()" class="px-4 py-2 rounded-xl border border-earth-200 text-xs font-semibold text-stone-600 hover:bg-earth-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold shadow-sm">
+                            Connect & Sync
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add New Produce Modal (Owner Mode) -->
+    <div id="addProductModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-earth-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-earth-100 pb-3">
+                <h3 class="font-serif font-bold text-lg text-earth-900">Add Harvest Item</h3>
+                <button onclick="closeAddProductModal()" class="text-stone-400 hover:text-stone-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAddNewProduct(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1">Vegetable / Item Name *</label>
+                    <input type="text" id="newItemName" required placeholder="e.g., Sweet Corn" class="w-full px-3 py-2 rounded-xl border border-earth-200 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-600 mb-1">Price (Rs) *</label>
+                        <input type="number" step="1" min="1" id="newItemPrice" required placeholder="50" class="w-full px-3 py-2 rounded-xl border border-earth-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-600 mb-1">Unit *</label>
+                        <select id="newItemUnitSelect" onchange="toggleNewCustomUnit(this.value)" class="w-full px-3 py-2 rounded-xl border border-earth-200 text-sm bg-white">
+                            <option value="kg">per kg</option>
+                            <option value="500g">per 500g</option>
+                            <option value="250g">per 250g</option>
+                            <option value="bunch">per bunch</option>
+                            <option value="piece">per piece</option>
+                            <option value="pack">per pack</option>
+                            <option value="punnet">per punnet</option>
+                            <option value="__custom__">Custom unit...</option>
+                        </select>
+                        <input type="text" id="newItemCustomUnit" placeholder="e.g., 100g, bag, dozen" class="hidden mt-1.5 w-full px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50/40 text-xs">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-600 mb-1">Category</label>
+                        <select id="newItemCategory" class="w-full px-3 py-2 rounded-xl border border-earth-200 text-sm bg-white">
+                            <option value="Leafy Greens">Leafy Greens</option>
+                            <option value="Roots & Bulbs">Roots & Bulbs</option>
+                            <option value="Fruiting Veg">Fruiting Veg</option>
+                            <option value="Herbs & Aromatics">Herbs & Aromatics</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-600 mb-1">Emoji Icon</label>
+                        <input type="text" id="newItemEmoji" value="🥬" maxlength="4" class="w-full px-3 py-2 rounded-xl border border-earth-200 text-sm text-center">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1">Short Freshness Note</label>
+                    <input type="text" id="newItemNote" placeholder="e.g., Crisp, sweet & pesticide-free" class="w-full px-3 py-2 rounded-xl border border-earth-200 text-sm">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeAddProductModal()" class="px-4 py-2 rounded-xl border border-earth-200 text-xs font-semibold text-stone-600">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800">Add to Stand</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Owner PIN Verification Modal -->
+    <div id="ownerPinModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-xl border border-earth-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-earth-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-brand-700"></i>
+                    <h3 class="font-serif font-bold text-base text-earth-900">Owner Access</h3>
+                </div>
+                <button onclick="closeOwnerPinModal()" class="text-stone-400 hover:text-stone-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="verifyOwnerPin(event)" class="space-y-3">
+                <p class="text-xs text-stone-600">Enter your 4-digit owner PIN to unlock price & inventory editing.</p>
+                <input type="password" id="ownerPinInput" inputmode="numeric" maxlength="6" placeholder="••••" required class="w-full px-3.5 py-2.5 rounded-xl border border-earth-200 text-center text-lg tracking-widest font-bold focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <p id="ownerPinError" class="hidden text-xs text-rose-600 font-medium text-center">Incorrect PIN. Please try again.</p>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="closeOwnerPinModal()" class="px-3.5 py-2 rounded-xl border border-earth-200 text-xs font-semibold text-stone-600">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-semibold">Unlock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Confirmation / Fallback Message Box (Replaces alert()) -->
+    <div id="orderFallbackModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-earth-200 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-serif font-bold text-lg text-brand-900">Order Ready for WhatsApp</h3>
+                <button onclick="closeFallbackModal()" class="text-stone-400 hover:text-stone-700 p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-stone-600">If WhatsApp didn't open automatically, copy your formatted order below and send it to <strong class="text-earth-900">+230 5811 0852</strong>:</p>
+            <textarea id="fallbackOrderTextarea" rows="8" readonly class="w-full p-3 rounded-xl bg-earth-50 border border-earth-200 text-xs font-mono text-earth-900 focus:outline-none"></textarea>
+            <div class="flex gap-2">
+                <button onclick="copyFallbackTextarea()" class="flex-1 py-2.5 px-4 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs font-semibold transition">
+                    <i class="fa-regular fa-copy mr-1"></i> Copy Order Message
+                </button>
+                <button onclick="closeFallbackModal()" class="py-2.5 px-4 rounded-xl border border-earth-200 text-xs font-semibold text-stone-600">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toastBanner" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-earth-900 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">Updated</span>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // ==========================================
+        // 1. STORE CONFIGURATION & DEFAULT INVENTORY
+        // ==========================================
+        const STORE_CONFIG = {
+            name: "Swayke Fresh Market",
+            whatsappNumber: "23058110852",
+            whatsappDisplay: "+230 5811 0852",
+            currency: "Rs "
+        };
+
+        const OWNER_PIN = "0852"; // Private 4-digit owner PIN
+        const PRESET_UNITS = ['kg', '500g', '250g', 'bunch', 'piece', 'pack', 'punnet'];
+        const DEFAULT_PUBLIC_URL = 'https://swetagunessk-creator.github.io/swaykefresh/';
+
+        const DEFAULT_PRODUCTS = [
+            { id: 'p1', name: 'Heirloom Tomatoes (Pomme d\'Amour)', category: 'Fruiting Veg', price: 65, unit: '500g', emoji: '🍅', note: 'Sun-ripened on the vine, sweet & juicy', inStock: true, badge: 'Popular' },
+            { id: 'p2', name: 'Organic Baby Spinach (Brèdes)', category: 'Leafy Greens', price: 45, unit: 'bunch', emoji: '🥬', note: 'Tender leaves washed in spring water', inStock: true, badge: 'Picked Today' },
+            { id: 'p3', name: 'Red Creole Onions', category: 'Roots & Bulbs', price: 55, unit: 'kg', emoji: '🧅', note: 'Cured & crisp, rich flavor for curries', inStock: true, badge: '' },
+            { id: 'p4', name: 'Sweet Nantes Carrots', category: 'Roots & Bulbs', price: 60, unit: 'kg', emoji: '🥕', note: 'Pulled at dawn, earthy and crunchy', inStock: true, badge: '' },
+            { id: 'p5', name: 'Fresh Coriander (Cotomili)', category: 'Herbs & Aromatics', price: 25, unit: 'bunch', emoji: '🌿', note: 'Fragrant garden bunch with roots intact', inStock: true, badge: 'Fresh' },
+            { id: 'p6', name: 'English Cucumbers', category: 'Fruiting Veg', price: 35, unit: 'piece', emoji: '🥒', note: 'Thin-skinned, seedless & refreshing', inStock: true, badge: '' },
+            { id: 'p7', name: 'Young Ginger Root', category: 'Herbs & Aromatics', price: 80, unit: '250g', emoji: '🫚', note: 'Aromatic local harvest, thin golden skin', inStock: true, badge: '' },
+            { id: 'p8', name: 'Rainbow Swiss Chard', category: 'Leafy Greens', price: 50, unit: 'bunch', emoji: '🥗', note: 'Vibrant ruby & gold stems, crisp leaves', inStock: true, badge: '' },
+            { id: 'p9', name: 'Sweet Bell Peppers (Mix)', category: 'Fruiting Veg', price: 95, unit: '500g', emoji: '🫑', note: 'Red & yellow crunchy peppers', inStock: true, badge: '' },
+            { id: 'p10', name: 'Baby Red Potatoes', category: 'Roots & Bulbs', price: 70, unit: 'kg', emoji: '🥔', note: 'Creamy texture, ideal for roasting', inStock: false, badge: '' }
+        ];
+
+        // Application State (Strictly starts in locked Customer View)
+        let products = [];
+        let cart = {};
+        let activeCategory = 'All';
+        let searchQuery = '';
+        let fulfillmentMethod = 'pickup';
+        let ownerMode = false;
+        let lastFormattedMessage = '';
+        let activeSheetCsvUrl = '';
+        let activeStorePublicUrl = '';
+        let secretTapCount = 0;
+        let secretTapTimer = null;
+
+        // ==========================================
+        // 2. INITIALIZATION, GOOGLE SHEETS & STORAGE
+        // ==========================================
+        async function initApp() {
+            ownerMode = false;
+            try { sessionStorage.removeItem('swayke_owner_unlocked'); } catch (e) {}
+            const panel = document.getElementById('ownerControlPanel');
+            const badge = document.getElementById('ownerModeBadge');
+            if (panel) panel.classList.add('hidden');
+            if (badge) badge.classList.add('hidden');
+
+            try {
+                const savedProducts = localStorage.getItem('swayke_products_v4');
+                const savedCart = localStorage.getItem('swayke_cart_v4');
+                const savedSheetUrl = localStorage.getItem('swayke_sheet_csv_url_v1');
+                const savedPublicUrl = localStorage.getItem('swayke_store_public_url_v1');
+                
+                products = savedProducts ? JSON.parse(savedProducts) : JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+                cart = savedCart ? JSON.parse(savedCart) : {};
+                activeSheetCsvUrl = savedSheetUrl || '';
+                activeStorePublicUrl = savedPublicUrl || detectDefaultStoreUrl();
+            } catch (e) {
+                products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+                cart = {};
+                activeSheetCsvUrl = '';
+                activeStorePublicUrl = detectDefaultStoreUrl();
+            }
+
+            // Set today's harvest date badge
+            const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+            const todayStr = new Date().toLocaleDateString('en-US', dateOptions);
+            document.getElementById('harvestDateBadge').textContent = `Harvested ${todayStr} • Mauritius`;
+
+            renderCategories();
+            renderProducts();
+            updateCartUI();
+
+            // If a Google Sheet CSV URL is connected, auto-fetch latest prices on load
+            if (activeSheetCsvUrl) {
+                updateLiveSyncIndicator(true);
+                await syncFromGoogleSheet(false);
+            }
+
+            // Only prompt PIN modal if URL explicitly contains ?owner=1
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('owner') === '1') {
+                openOwnerPinModal();
+            }
+        }
+
+        function detectDefaultStoreUrl() {
+            const href = window.location.href.split('?')[0].split('#')[0];
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+                return href;
+            }
+            return DEFAULT_PUBLIC_URL;
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem('swayke_products_v4', JSON.stringify(products));
+                localStorage.setItem('swayke_cart_v4', JSON.stringify(cart));
+            } catch (e) {
+                console.warn('Local storage unavailable');
+            }
+        }
+
+        function formatPrice(amount) {
+            const num = Number(amount) || 0;
+            return `${STORE_CONFIG.currency}${Number.isInteger(num) ? num : num.toFixed(2)}`;
+        }
+
+        // ==========================================
+        // 3. SECRET OWNER UNLOCK & PIN PROTECTION
+        // ==========================================
+        function handleSecretLogoTap() {
+            secretTapCount++;
+            clearTimeout(secretTapTimer);
+            secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 1800);
+            if (secretTapCount >= 5) {
+                secretTapCount = 0;
+                if (ownerMode) {
+                    toggleOwnerMode();
+                } else {
+                    openOwnerPinModal();
+                }
+            }
+        }
+
+        function openOwnerPinModal() {
+            const modal = document.getElementById('ownerPinModal');
+            document.getElementById('ownerPinError').classList.add('hidden');
+            document.getElementById('ownerPinInput').value = '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('ownerPinInput').focus(), 100);
+        }
+
+        function closeOwnerPinModal() {
+            const modal = document.getElementById('ownerPinModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function verifyOwnerPin(event) {
+            event.preventDefault();
+            const entered = document.getElementById('ownerPinInput').value.trim();
+            if (entered === OWNER_PIN) {
+                try { sessionStorage.setItem('swayke_owner_unlocked', OWNER_PIN); } catch (e) {}
+                closeOwnerPinModal();
+                if (!ownerMode) toggleOwnerMode();
+            } else {
+                document.getElementById('ownerPinError').classList.remove('hidden');
+                document.getElementById('ownerPinInput').select();
+            }
+        }
+
+        function toggleOwnerMode() {
+            const isVerified = sessionStorage.getItem('swayke_owner_unlocked') === OWNER_PIN;
+            ownerMode = !ownerMode && isVerified;
+            const panel = document.getElementById('ownerControlPanel');
+            const badge = document.getElementById('ownerModeBadge');
+
+            if (ownerMode) {
+                panel.classList.remove('hidden');
+                badge.classList.remove('hidden');
+                showToast('Owner Edit Mode enabled');
+            } else {
+                try { sessionStorage.removeItem('swayke_owner_unlocked'); } catch (e) {}
+                panel.classList.add('hidden');
+                badge.classList.add('hidden');
+                showToast('Owner Edit Mode closed');
+            }
+            renderProducts();
+        }
+
+        // ==========================================
+        // 4. QR CODE POSTER GENERATOR & EXPORT
+        // ==========================================
+        function openQrModal() {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const modal = document.getElementById('qrModal');
+            const input = document.getElementById('storePublicUrlInput');
+            const warning = document.getElementById('localFileQrWarning');
+
+            input.value = activeStorePublicUrl;
+            const isHosted = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+            if (!isHosted && activeStorePublicUrl === DEFAULT_PUBLIC_URL) {
+                warning.classList.remove('hidden');
+            } else {
+                warning.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            updateStoreQrCode(input.value);
+        }
+
+        function closeQrModal() {
+            const modal = document.getElementById('qrModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function updateStoreQrCode(rawUrl) {
+            const url = (rawUrl || '').trim() || DEFAULT_PUBLIC_URL;
+            activeStorePublicUrl = url;
+            try { localStorage.setItem('swayke_store_public_url_v1', url); } catch (e) {}
+
+            document.getElementById('qrPosterDisplayUrl').textContent = url;
+            const container = document.getElementById('qrcodeCanvasContainer');
+            container.innerHTML = '';
+
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(container, {
+                    text: url,
+                    width: 196,
+                    height: 196,
+                    colorDark: "#1a3b26",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } else {
+                container.innerHTML = `<p class="text-xs text-stone-500 p-4">QR Generator loading...</p>`;
+            }
+        }
+
+        function copyStoreLink() {
+            const url = document.getElementById('storePublicUrlInput').value.trim();
+            if (!url) return;
+            const temp = document.createElement('textarea');
+            temp.value = url;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand('copy');
+                showToast('Store link copied to clipboard!');
+            } catch (e) {
+                showToast('Please copy the URL manually');
+            }
+            document.body.removeChild(temp);
+        }
+
+        function downloadQrPng() {
+            const container = document.getElementById('qrcodeCanvasContainer');
+            const canvas = container.querySelector('canvas');
+            const img = container.querySelector('img');
+            let dataUrl = '';
+
+            if (canvas) {
+                dataUrl = canvas.toDataURL('image/png');
+            } else if (img && img.src) {
+                dataUrl = img.src;
+            }
+
+            if (!dataUrl) {
+                showToast('QR code not ready yet');
+                return;
+            }
+
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'swayke-fresh-market-qr.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('QR Code PNG downloaded!');
+        }
+
+        function downloadStandaloneHTML() {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+
+            // Ensure owner mode is completely closed before serializing the HTML
+            ownerMode = false;
+            try { sessionStorage.removeItem('swayke_owner_unlocked'); } catch (e) {}
+            document.getElementById('ownerControlPanel').classList.add('hidden');
+            document.getElementById('ownerModeBadge').classList.add('hidden');
+            closeQrModal();
+            renderProducts();
+
+            const docClone = document.documentElement.cloneNode(true);
+            const grid = docClone.querySelector('#productGrid');
+            if (grid) grid.innerHTML = '';
+            const cats = docClone.querySelector('#categoryContainer');
+            if (cats) cats.innerHTML = '';
+
+            const serializedProducts = JSON.stringify(products, null, 12);
+            const scripts = docClone.querySelectorAll('script');
+            scripts.forEach(s => {
+                if (s.textContent.includes('const DEFAULT_PRODUCTS =')) {
+                    s.textContent = s.textContent.replace(
+                        /const DEFAULT_PRODUCTS = \[[\s\S]*?\];/,
+                        `const DEFAULT_PRODUCTS = ${serializedProducts};`
+                    );
+                }
+            });
+
+            const fullHtml = '<!DOCTYPE html>\n' + docClone.outerHTML;
+            const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Clean customer index.html downloaded!');
+        }
+
+        // ==========================================
+        // 5. GOOGLE SHEETS CSV LIVE SYNC
+        // ==========================================
+        function openSheetSyncModal() {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const modal = document.getElementById('sheetSyncModal');
+            document.getElementById('sheetCsvUrlInput').value = activeSheetCsvUrl;
+            document.getElementById('sheetSyncStatusMsg').classList.add('hidden');
+            
+            const disconnectBtn = document.getElementById('disconnectSheetBtn');
+            if (activeSheetCsvUrl) {
+                disconnectBtn.classList.remove('hidden');
+            } else {
+                disconnectBtn.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeSheetSyncModal() {
+            const modal = document.getElementById('sheetSyncModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function updateLiveSyncIndicator(isConnected) {
+            const badge = document.getElementById('liveSyncBadge');
+            if (isConnected) {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
+        }
+
+        async function saveAndConnectSheet(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById('sheetCsvUrlInput').value.trim();
+            if (!urlInput) return;
+
+            activeSheetCsvUrl = urlInput;
+            try { localStorage.setItem('swayke_sheet_csv_url_v1', activeSheetCsvUrl); } catch (e) {}
+
+            const success = await syncFromGoogleSheet(true);
+            if (success) {
+                updateLiveSyncIndicator(true);
+                setTimeout(() => closeSheetSyncModal(), 900);
+            }
+        }
+
+        function disconnectGoogleSheet() {
+            activeSheetCsvUrl = '';
+            try { localStorage.removeItem('swayke_sheet_csv_url_v1'); } catch (e) {}
+            updateLiveSyncIndicator(false);
+            closeSheetSyncModal();
+            showToast('Disconnected Google Sheet');
+        }
+
+        async function syncFromGoogleSheet(showFeedback = false) {
+            if (!activeSheetCsvUrl) return false;
+            const statusBox = document.getElementById('sheetSyncStatusMsg');
+            const syncIcon = document.getElementById('liveSyncIcon');
+            if (syncIcon) syncIcon.classList.add('fa-spin');
+
+            try {
+                const cacheBuster = (activeSheetCsvUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
+                const response = await fetch(activeSheetCsvUrl + cacheBuster);
+                if (!response.ok) throw new Error('Network error fetching CSV');
+                
+                const csvText = await response.text();
+                const parsedItems = parseProduceCSV(csvText);
+
+                if (parsedItems.length === 0) {
+                    throw new Error('No valid vegetable rows found in CSV.');
+                }
+
+                products = parsedItems;
+                saveState();
+                renderCategories();
+                renderProducts();
+                updateCartUI();
+
+                if (showFeedback) {
+                    statusBox.textContent = `✓ Synced ${parsedItems.length} produce items from Google Sheets!`;
+                    statusBox.className = 'text-xs p-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 block';
+                    showToast(`Synced ${parsedItems.length} items from Google Sheets`);
+                }
+                return true;
+            } catch (err) {
+                if (showFeedback) {
+                    statusBox.textContent = 'Could not load CSV. Make sure the Google Sheet is published to the web as CSV.';
+                    statusBox.className = 'text-xs p-2.5 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 block';
+                    showToast('Google Sheet sync failed');
+                }
+                return false;
+            } finally {
+                if (syncIcon) syncIcon.classList.remove('fa-spin');
+            }
+        }
+
+        function parseCsvLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function parseProduceCSV(csvText) {
+            const lines = csvText.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) return [];
+
+            const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase());
+            const idxName = headers.findIndex(h => h.includes('name') || h.includes('item') || h.includes('veg'));
+            const idxCat = headers.findIndex(h => h.includes('cat'));
+            const idxPrice = headers.findIndex(h => h.includes('price') || h.includes('rs'));
+            const idxUnit = headers.findIndex(h => h.includes('unit'));
+            const idxEmoji = headers.findIndex(h => h.includes('emoji') || h.includes('icon'));
+            const idxNote = headers.findIndex(h => h.includes('note') || h.includes('desc'));
+            const idxStock = headers.findIndex(h => h.includes('stock') || h.includes('avail'));
+            const idxBadge = headers.findIndex(h => h.includes('badge') || h.includes('tag'));
+
+            const items = [];
+            for (let i = 1; i < lines.length; i++) {
+                const cols = parseCsvLine(lines[i]);
+                const name = idxName >= 0 ? cols[idxName] : cols[0];
+                if (!name) continue;
+
+                const rawPrice = idxPrice >= 0 ? cols[idxPrice] : cols[2];
+                const cleanPrice = parseFloat((rawPrice || '0').replace(/[^0-9.]/g, '')) || 0;
+                const stockStr = (idxStock >= 0 ? cols[idxStock] : 'yes').toLowerCase();
+                const inStock = !['no', 'false', '0', 'sold out', 'out'].includes(stockStr);
+
+                items.push({
+                    id: 'sheet_' + i,
+                    name: name,
+                    category: (idxCat >= 0 && cols[idxCat]) ? cols[idxCat] : 'Fruiting Veg',
+                    price: cleanPrice,
+                    unit: (idxUnit >= 0 && cols[idxUnit]) ? cols[idxUnit] : 'kg',
+                    emoji: (idxEmoji >= 0 && cols[idxEmoji]) ? cols[idxEmoji] : '🥬',
+                    note: (idxNote >= 0 && cols[idxNote]) ? cols[idxNote] : 'Fresh local harvest',
+                    inStock: inStock,
+                    badge: (idxBadge >= 0 && cols[idxBadge]) ? cols[idxBadge] : ''
+                });
+            }
+            return items;
+        }
+
+        function downloadStarterCsv() {
+            const headers = ['Name', 'Category', 'Price', 'Unit', 'InStock', 'Emoji', 'Note', 'Badge'];
+            const rows = products.map(p => [
+                `"${p.name.replace(/"/g, '""')}"`,
+                `"${p.category}"`,
+                p.price,
+                `"${p.unit}"`,
+                p.inStock ? 'Yes' : 'No',
+                `"${p.emoji}"`,
+                `"${(p.note || '').replace(/"/g, '""')}"`,
+                `"${p.badge || ''}"`
+            ].join(','));
+
+            const csvContent = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'swayke_fresh_market_inventory.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Starter CSV downloaded!');
+        }
+
+        // ==========================================
+        // 6. RENDERING CATEGORIES & PRODUCE GRID
+        // ==========================================
+        function renderCategories() {
+            const categories = ['All', ...new Set(products.map(p => p.category))];
+            const container = document.getElementById('categoryContainer');
+            
+            container.innerHTML = categories.map(cat => {
+                const isActive = cat === activeCategory;
+                const activeClasses = isActive 
+                    ? 'bg-brand-800 text-white border-brand-800 shadow-xs' 
+                    : 'bg-white text-stone-600 border-earth-200 hover:bg-earth-100';
+                return `
+                    <button 
+                        onclick="selectCategory('${cat}')" 
+                        class="px-3.5 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition tap-scale ${activeClasses}">
+                        ${cat}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectCategory(category) {
+            activeCategory = category;
+            renderCategories();
+            renderProducts();
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.trim().toLowerCase();
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (searchQuery.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            renderProducts();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            handleSearch('');
+        }
+
+        function resetFilters() {
+            activeCategory = 'All';
+            clearSearch();
+            renderCategories();
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            const emptyState = document.getElementById('emptyState');
+            const gridTitle = document.getElementById('gridTitle');
+            const itemCountLabel = document.getElementById('itemCountLabel');
+
+            const filtered = products.filter(p => {
+                const matchesCat = activeCategory === 'All' || p.category === activeCategory;
+                const matchesSearch = p.name.toLowerCase().includes(searchQuery) || 
+                                      p.note.toLowerCase().includes(searchQuery) ||
+                                      p.category.toLowerCase().includes(searchQuery);
+                return matchesCat && matchesSearch;
+            });
+
+            gridTitle.textContent = activeCategory === 'All' ? "Today's Harvest" : activeCategory;
+            itemCountLabel.textContent = `${filtered.length} ${filtered.length === 1 ? 'item' : 'items'}`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            // Strictly verify PIN session before rendering any inline owner editor controls
+            const isVerifiedOwner = ownerMode === true && sessionStorage.getItem('swayke_owner_unlocked') === OWNER_PIN;
+
+            grid.innerHTML = filtered.map(item => {
+                const qty = cart[item.id] || 0;
+                const isSoldOut = !item.inStock;
+
+                // Owner Edit Mode inline controls
+                let ownerEditorHTML = '';
+                if (isVerifiedOwner) {
+                    const isPresetUnit = PRESET_UNITS.includes(item.unit);
+                    const unitOptions = PRESET_UNITS.map(u => 
+                        `<option value="${u}" ${item.unit === u ? 'selected' : ''}>per ${u}</option>`
+                    ).join('') + `<option value="__custom__" ${!isPresetUnit ? 'selected' : ''}>Custom...</option>`;
+
+                    ownerEditorHTML = `
+                        <div class="mt-3 pt-3 border-t border-amber-200 bg-amber-50/70 -mx-4 -mb-4 px-4 py-3 rounded-b-2xl space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="text-[11px] font-semibold text-amber-900">Price (Rs):</label>
+                                <input type="number" step="1" min="0" value="${item.price}" 
+                                    onchange="updateProductPrice('${item.id}', this.value)"
+                                    class="w-24 px-2 py-1 text-xs font-bold bg-white border border-amber-300 rounded-lg text-right focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="text-[11px] font-semibold text-amber-900">Sold By:</label>
+                                <select onchange="handleUnitSelectChange('${item.id}', this.value)"
+                                    class="w-28 px-2 py-1 text-xs font-semibold bg-white border border-amber-300 rounded-lg text-right focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                    ${unitOptions}
+                                </select>
+                            </div>
+                            <div id="customUnitWrap_${item.id}" class="${isPresetUnit ? 'hidden' : 'flex'} items-center justify-between gap-2">
+                                <label class="text-[11px] font-semibold text-amber-900">Custom Unit:</label>
+                                <input type="text" value="${item.unit}" placeholder="e.g. 100g, bag"
+                                    onchange="updateProductUnit('${item.id}', this.value)"
+                                    class="w-28 px-2 py-1 text-xs font-semibold bg-white border border-amber-400 rounded-lg text-right focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            <div class="flex items-center justify-between gap-2 pt-0.5">
+                                <button onclick="toggleProductStock('${item.id}')" class="text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition ${item.inStock ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300'}">
+                                    ${item.inStock ? '✓ In Stock' : '✕ Sold Out'}
+                                </button>
+                                <button onclick="deleteProduct('${item.id}')" class="text-[11px] text-rose-600 hover:text-rose-800 font-semibold px-2 py-1">
+                                    <i class="fa-solid fa-trash-can"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Customer Quantity Control
+                let actionControlHTML = '';
+                if (isSoldOut) {
+                    actionControlHTML = `
+                        <span class="inline-block text-xs font-semibold text-stone-400 bg-stone-100 px-3 py-2 rounded-xl border border-stone-200">
+                            Sold Out Today
+                        </span>
+                    `;
+                } else if (qty === 0) {
+                    actionControlHTML = `
+                        <button onclick="updateCart('${item.id}', 1)" class="bg-brand-50 hover:bg-brand-700 text-brand-800 hover:text-white border border-brand-200 hover:border-brand-700 font-semibold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 tap-scale">
+                            <i class="fa-solid fa-plus text-[11px]"></i> Add
+                        </button>
+                    `;
+                } else {
+                    actionControlHTML = `
+                        <div class="flex items-center bg-brand-800 text-white rounded-xl p-1 shadow-xs">
+                            <button onclick="updateCart('${item.id}', -1)" class="w-7 h-7 rounded-lg hover:bg-brand-700 flex items-center justify-center transition tap-scale" aria-label="Decrease quantity">
+                                <i class="fa-solid fa-minus text-xs"></i>
+                            </button>
+                            <span class="w-8 text-center font-bold text-xs">${qty}</span>
+                            <button onclick="updateCart('${item.id}', 1)" class="w-7 h-7 rounded-lg hover:bg-brand-700 flex items-center justify-center transition tap-scale" aria-label="Increase quantity">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <article class="bg-white rounded-2xl p-4 border ${qty > 0 ? 'border-brand-500 ring-1 ring-brand-500/20' : 'border-earth-200'} shadow-2xs flex flex-col justify-between transition ${isSoldOut && !isVerifiedOwner ? 'opacity-65' : ''}">
+                        <div>
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-2xl bg-earth-100 flex items-center justify-center text-2xl shrink-0">
+                                        ${item.emoji}
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] font-semibold uppercase tracking-wider text-stone-400">${item.category}</span>
+                                        <h4 class="font-bold text-sm sm:text-base text-earth-900 leading-snug">${item.name}</h4>
+                                    </div>
+                                </div>
+                                ${item.badge && !isSoldOut ? `<span class="shrink-0 text-[10px] font-bold bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full">${item.badge}</span>` : ''}
+                            </div>
+                            <p class="text-xs text-stone-500 mt-2.5 line-clamp-2">${item.note}</p>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-earth-100 flex items-center justify-between gap-2">
+                            <div>
+                                <span class="font-serif font-bold text-base sm:text-lg text-brand-900">${formatPrice(item.price)}</span>
+                                <span class="text-xs text-stone-500 font-medium">/ ${item.unit}</span>
+                            </div>
+                            ${actionControlHTML}
+                        </div>
+
+                        ${ownerEditorHTML}
+                    </article>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // 7. OWNER INLINE INVENTORY MANAGEMENT
+        // ==========================================
+        function updateProductPrice(id, newPrice) {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const val = parseFloat(newPrice);
+            if (isNaN(val) || val < 0) return;
+            const item = products.find(p => p.id === id);
+            if (item) {
+                item.price = val;
+                saveState();
+                updateCartUI();
+                showToast(`Updated ${item.name} to ${formatPrice(val)}`);
+            }
+        }
+
+        function handleUnitSelectChange(id, selectedVal) {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const customWrap = document.getElementById(`customUnitWrap_${id}`);
+            if (selectedVal === '__custom__') {
+                if (customWrap) {
+                    customWrap.classList.remove('hidden');
+                    customWrap.classList.add('flex');
+                    const input = customWrap.querySelector('input');
+                    if (input) input.focus();
+                }
+            } else {
+                if (customWrap) {
+                    customWrap.classList.add('hidden');
+                    customWrap.classList.remove('flex');
+                }
+                updateProductUnit(id, selectedVal);
+            }
+        }
+
+        function updateProductUnit(id, newUnit) {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const cleanUnit = (newUnit || '').trim();
+            if (!cleanUnit) return;
+            const item = products.find(p => p.id === id);
+            if (item) {
+                item.unit = cleanUnit;
+                saveState();
+                renderProducts();
+                updateCartUI();
+                showToast(`Updated ${item.name} unit to / ${cleanUnit}`);
+            }
+        }
+
+        function toggleNewCustomUnit(val) {
+            const customInput = document.getElementById('newItemCustomUnit');
+            if (val === '__custom__') {
+                customInput.classList.remove('hidden');
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+                customInput.required = false;
+            }
+        }
+
+        function toggleProductStock(id) {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const item = products.find(p => p.id === id);
+            if (item) {
+                item.inStock = !item.inStock;
+                if (!item.inStock && cart[id]) {
+                    delete cart[id];
+                }
+                saveState();
+                renderProducts();
+                updateCartUI();
+                showToast(`${item.name} marked ${item.inStock ? 'In Stock' : 'Sold Out'}`);
+            }
+        }
+
+        function deleteProduct(id) {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            products = products.filter(p => p.id !== id);
+            delete cart[id];
+            saveState();
+            renderCategories();
+            renderProducts();
+            updateCartUI();
+            showToast('Item removed from stand');
+        }
+
+        function openAddProductModal() {
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const modal = document.getElementById('addProductModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeAddProductModal() {
+            const modal = document.getElementById('addProductModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function handleAddNewProduct(event) {
+            event.preventDefault();
+            if (!ownerMode || sessionStorage.getItem('swayke_owner_unlocked') !== OWNER_PIN) return;
+            const name = document.getElementById('newItemName').value.trim();
+            const price = parseFloat(document.getElementById('newItemPrice').value);
+            const unitSelect = document.getElementById('newItemUnitSelect').value;
+            const customUnit = document.getElementById('newItemCustomUnit').value.trim();
+            const unit = unitSelect === '__custom__' ? (customUnit || 'kg') : unitSelect;
+            const category = document.getElementById('newItemCategory').value;
+            const emoji = document.getElementById('newItemEmoji').value.trim() || '🥬';
+            const note = document.getElementById('newItemNote').value.trim() || 'Freshly harvested local produce';
+
+            if (!name || isNaN(price)) return;
+
+            const newProd = {
+                id: 'p_' + Date.now(),
+                name,
+                category,
+                price,
+                unit,
+                emoji,
+                note,
+                inStock: true,
+                badge: 'New'
+            };
+
+            products.unshift(newProd);
+            saveState();
+            renderCategories();
+            renderProducts();
+            closeAddProductModal();
+            event.target.reset();
+            document.getElementById('newItemCustomUnit').classList.add('hidden');
+            showToast(`Added ${name} (${formatPrice(price)} / ${unit})`);
+        }
+
+        // ==========================================
+        // 8. CART MANAGEMENT & DRAWER UI
+        // ==========================================
+        function updateCart(productId, delta) {
+            const current = cart[productId] || 0;
+            const next = current + delta;
+
+            if (next <= 0) {
+                delete cart[productId];
+            } else {
+                cart[productId] = next;
+            }
+
+            saveState();
+            renderProducts();
+            updateCartUI();
+        }
+
+        function getCartSummary() {
+            let totalCount = 0;
+            let totalAmount = 0;
+            const items = [];
+
+            for (const [id, qty] of Object.entries(cart)) {
+                const product = products.find(p => p.id === id);
+                if (product && product.inStock && qty > 0) {
+                    const lineTotal = product.price * qty;
+                    totalCount += qty;
+                    totalAmount += lineTotal;
+                    items.push({ product, qty, lineTotal });
+                }
+            }
+
+            return { totalCount, totalAmount, items };
+        }
+
+        function updateCartUI() {
+            const { totalCount, totalAmount, items } = getCartSummary();
+
+            document.getElementById('headerCartCount').textContent = totalCount;
+
+            const mobileBar = document.getElementById('mobileBottomBar');
+            document.getElementById('mobileCartCount').textContent = totalCount;
+            document.getElementById('mobileCartTotal').textContent = formatPrice(totalAmount);
+
+            if (totalCount > 0) {
+                mobileBar.classList.remove('translate-y-full');
+            } else {
+                mobileBar.classList.add('translate-y-full');
+            }
+
+            const container = document.getElementById('cartItemsContainer');
+            const checkoutSection = document.getElementById('checkoutFormSection');
+            const drawerFooter = document.getElementById('cartDrawerFooter');
+            document.getElementById('drawerTotalAmount').textContent = formatPrice(totalAmount);
+
+            if (items.length === 0) {
+                checkoutSection.classList.add('hidden');
+                drawerFooter.classList.add('hidden');
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4">
+                        <div class="w-16 h-16 rounded-full bg-earth-100 text-3xl flex items-center justify-center mx-auto mb-3">🧺</div>
+                        <h4 class="font-serif font-bold text-base text-earth-900">Your basket is empty</h4>
+                        <p class="text-xs text-stone-500 mt-1">Tap "+ Add" on any fresh vegetables from today's harvest to start your order.</p>
+                        <button onclick="closeCartDrawer()" class="mt-4 bg-brand-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-brand-800 transition">
+                            Browse Vegetables
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            checkoutSection.classList.remove('hidden');
+            drawerFooter.classList.remove('hidden');
+
+            container.innerHTML = items.map(({ product, qty, lineTotal }) => `
+                <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-earth-50 border border-earth-200">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="text-xl shrink-0">${product.emoji}</span>
+                        <div class="min-w-0">
+                            <h5 class="font-semibold text-xs sm:text-sm text-earth-900 truncate">${product.name}</h5>
+                            <p class="text-[11px] text-stone-500">${formatPrice(product.price)} / ${product.unit}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                        <div class="flex items-center bg-white border border-earth-200 rounded-lg p-0.5">
+                            <button onclick="updateCart('${product.id}', -1)" class="w-6 h-6 rounded-md hover:bg-earth-100 text-stone-700 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-minus text-[10px]"></i>
+                            </button>
+                            <span class="w-6 text-center font-bold text-xs text-earth-900">${qty}</span>
+                            <button onclick="updateCart('${product.id}', 1)" class="w-6 h-6 rounded-md hover:bg-earth-100 text-stone-700 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                            </button>
+                        </div>
+                        <span class="font-bold text-xs sm:text-sm text-brand-900 w-16 text-right">${formatPrice(lineTotal)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCartDrawer() {
+            const backdrop = document.getElementById('cartDrawerBackdrop');
+            const drawer = document.getElementById('cartDrawer');
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                drawer.classList.remove('translate-x-full');
+            }, 10);
+        }
+
+        function closeCartDrawer() {
+            const backdrop = document.getElementById('cartDrawerBackdrop');
+            const drawer = document.getElementById('cartDrawer');
+            backdrop.classList.add('opacity-0');
+            drawer.classList.add('translate-x-full');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+
+        function setFulfillment(method) {
+            fulfillmentMethod = method;
+            const btnPickup = document.getElementById('btnPickup');
+            const btnDelivery = document.getElementById('btnDelivery');
+            const pickupGroup = document.getElementById('pickupSlotGroup');
+            const deliveryGroup = document.getElementById('deliveryAddressGroup');
+
+            if (method === 'pickup') {
+                btnPickup.className = 'py-2.5 px-3 rounded-xl border-2 border-brand-600 bg-brand-50 text-brand-900 font-semibold text-xs flex items-center justify-center gap-1.5 transition';
+                btnDelivery.className = 'py-2.5 px-3 rounded-xl border border-earth-200 bg-white text-stone-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition';
+                pickupGroup.classList.remove('hidden');
+                deliveryGroup.classList.add('hidden');
+            } else {
+                btnDelivery.className = 'py-2.5 px-3 rounded-xl border-2 border-brand-600 bg-brand-50 text-brand-900 font-semibold text-xs flex items-center justify-center gap-1.5 transition';
+                btnPickup.className = 'py-2.5 px-3 rounded-xl border border-earth-200 bg-white text-stone-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition';
+                deliveryGroup.classList.remove('hidden');
+                pickupGroup.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // 9. WHATSAPP MESSAGE GENERATION & ORDERING
+        // ==========================================
+        function buildWhatsAppOrderMessage() {
+            const { items, totalAmount } = getCartSummary();
+            if (items.length === 0) return null;
+
+            const nameInput = document.getElementById('customerName');
+            const customerName = nameInput.value.trim();
+
+            if (!customerName) {
+                nameInput.focus();
+                nameInput.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
+                showToast('Please enter your name first');
+                setTimeout(() => nameInput.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500'), 2000);
+                return null;
+            }
+
+            let fulfillmentLine = '';
+            if (fulfillmentMethod === 'pickup') {
+                const slot = document.getElementById('pickupTime').value;
+                fulfillmentLine = `📍 *Method:* Farm Pickup (${slot})`;
+            } else {
+                const addrInput = document.getElementById('deliveryAddress');
+                const address = addrInput.value.trim();
+                if (!address) {
+                    addrInput.focus();
+                    addrInput.classList.add('ring-2', 'ring-rose-500', 'border-rose-500');
+                    showToast('Please enter your delivery address');
+                    setTimeout(() => addrInput.classList.remove('ring-2', 'ring-rose-500', 'border-rose-500'), 2000);
+                    return null;
+                }
+                fulfillmentLine = `🚚 *Method:* Local Delivery\n🏠 *Address:* ${address}`;
+            }
+
+            const notes = document.getElementById('orderNotes').value.trim();
+            const itemLines = items.map(({ product, qty, lineTotal }) => 
+                `• ${qty}x ${product.name} (${product.unit}) — ${formatPrice(lineTotal)}`
+            ).join('\n');
+
+            let message = `🥬 *NEW HARVEST ORDER — ${STORE_CONFIG.name}*\n\n`;
+            message += `👤 *Customer:* ${customerName}\n`;
+            message += `${fulfillmentLine}\n\n`;
+            message += `🛒 *Produce Items:*\n${itemLines}\n\n`;
+            message += `💰 *Estimated Total:* ${formatPrice(totalAmount)}`;
+
+            if (notes) {
+                message += `\n📝 *Note:* ${notes}`;
+            }
+
+            return message;
+        }
+
+        function submitWhatsAppOrder() {
+            const message = buildWhatsAppOrderMessage();
+            if (!message) return;
+
+            lastFormattedMessage = message;
+            const encodedText = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${STORE_CONFIG.whatsappNumber}?text=${encodedText}`;
+
+            const win = window.open(whatsappUrl, '_blank');
+            if (!win) {
+                showFallbackModal(message);
+            } else {
+                showToast('Opening WhatsApp with your order...');
+            }
+        }
+
+        function copyOrderText() {
+            const message = buildWhatsAppOrderMessage();
+            if (!message) return;
+
+            lastFormattedMessage = message;
+            const temp = document.createElement('textarea');
+            temp.value = message;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand('copy');
+                showToast('Order copied! Paste into WhatsApp (+230 5811 0852)');
+            } catch (err) {
+                showFallbackModal(message);
+            }
+            document.body.removeChild(temp);
+        }
+
+        function showFallbackModal(message) {
+            const modal = document.getElementById('orderFallbackModal');
+            document.getElementById('fallbackOrderTextarea').value = message;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeFallbackModal() {
+            const modal = document.getElementById('orderFallbackModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyFallbackTextarea() {
+            const textarea = document.getElementById('fallbackOrderTextarea');
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Order copied to clipboard!');
+            } catch (e) {
+                showToast('Please select text and copy manually');
+            }
+        }
+
+        // ==========================================
+        // 10. TOAST NOTIFICATIONS
+        // ==========================================
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toastBanner');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 2600);
+        }
+
+        // Boot up on window load
+        window.onload = function() {
+            initApp();
+        };
+    </script>
+</body>
+</html>
